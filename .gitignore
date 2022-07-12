@@ -1,0 +1,8 @@
+.vs
+[Tt]emp
+[Oo]bj
+[Bb]in
+[Bb]uild
+[Bb]uilds
+*.csproj
+*.sln

@@ -1,0 +1,14 @@
+{
+  "name": "co.tangia.unitysdk",
+  "version": "0.0.1",
+  "displayName": "Tangia",
+  "description": "Tangia SDK",
+  "unity": "2019.2",
+  "author": {
+    "name": "Tangia(tm) a Ultimate Tournament brand"
+  },
+  "type": "library",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "2.0.0"
+  }
+}
