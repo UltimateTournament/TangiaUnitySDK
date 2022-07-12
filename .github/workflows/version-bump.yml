@@ -16,7 +16,7 @@ jobs:
       run: |
         git config --global url."https://x-oauth-basic:${PRIVATE_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
     - name: Bump version and push tag
-      uses: anothrNick/github-tag-action@1.36.0
+      uses: Hades32/github-tag-action@1.39.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WITH_V: true
