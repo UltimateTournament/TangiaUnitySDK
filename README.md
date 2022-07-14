@@ -22,20 +22,40 @@ Implementing our SDK consists of only 3 parts
 
 ### Login
 
-You need to offer the content creator a way to configure their login.
-E.g. as a text box in your settings.
+Content creators log into your game with a short code that they get from your Tangia profile.
+You need to offer the content creator a way to configure this code, e.g. as a text box in your settings.
 
 > Make sure to enable pasting the code, so your players don't have to type out their codes
 
 These codes are one-time use: You send them to our API and get a session token that you need
 to store, so the player doesn't have to re-enter the code every time
 
+```cs
+LoginResult login = null;
+yield return api.Login(creatorShortCode, lr => login = lr);
+if (login.Success)
+    storeSessionKey(login.SessionKey);
+```
+
 ### Polling and Confirming Events
 
-When you have a session you have to poll our API for interaction events and for each event
-either acknowledge or reject so we know if it was successful.
+If the user is logged in and within a game you have to poll our API for interaction events and for each event
+either acknowledge or reject it, so we know if it was successful.
 
 > You have to confirm events to get the next one
+
+```cs
+GameEventsResp resp = null;
+yield return api.PollEvents(e => resp = e);
+if (resp != null && resp.Events != null)
+    foreach (var evt in resp.Events)
+    {
+        var couldHandleEvent = handleInteractionEvent(evt.InteractionID);
+        if (couldHandleEvent)
+            yield return api.AckEvent(evt.EventID);
+        else
+            yield return api.RejectEvent(evt.EventID, "the reason why we rejected");
+```
 
 ### Stop Polling and Notify Game Stopped
 
@@ -45,6 +65,10 @@ You should not poll when they are in a menu or lobby screen because, so their au
 interact with them while it's not possible.
 
 This is also when you should mark the session as "not playing", so the audience gets instant feedback.
+
+```cs
+StartCoroutine(api.StopPlaying());
+```
 
 ### Complete Code Example
 
@@ -64,7 +88,7 @@ public class TangiaSpawner : MonoBehaviour
     // The version of your game is used to ensure we only send interaction events this version understands
     TangiaAPI api = new TangiaAPI("game_abcdef123", "1.0.0");
 
-    // this should be stored permanently (e.g. on disk, or in browser local storage etc)
+    // In a real game, this should be stored permanently (e.g. on disk, or in browser local storage etc)
     private string sessionKey = null;
 
     public void OnStreamerCodeEntered(string code)
@@ -72,6 +96,8 @@ public class TangiaSpawner : MonoBehaviour
         StartCoroutine(Login(code));
     }
 
+    // The code that a streamer enters into your game is very short lived.
+    // This call verifies it and exchanges it for a long lived session key
     IEnumerator Login(string code)
     {
         LoginResult login = null;
@@ -89,6 +115,7 @@ public class TangiaSpawner : MonoBehaviour
         }
     }
 
+    // Call this when the player starts playing and you'd be ready to accept events
     public void OnStartPlaying()
     {
         if (sessionKey != null)
@@ -98,12 +125,18 @@ public class TangiaSpawner : MonoBehaviour
         }
     }
 
+    // Call this when the player is not actively playing, e.g. when they're in a menu or
+    // simply are closing the game
     public void OnStopPlaying()
     {
         StopCoroutine(nameof(PollEvents));
         StartCoroutine(api.StopPlaying());
     }
 
+    // This constantly checks for new events and notifies our backend of success or failure.
+    // You don't need to worry about performance of this loop as the API is "long-polling".
+    // This means, if there is no event ready yet it will wait for up to a minute before returning,
+    // So this loop actually doesn't run very often
     private IEnumerator PollEvents()
     {
         while (true)
@@ -118,9 +151,10 @@ public class TangiaSpawner : MonoBehaviour
             foreach (var evt in resp.Events)
             {
                 Debug.Log("we got an event: " + evt.ToString());
-                // TODO: check if we can process it right now and process it
+                // TODO: check if the game can handle this interaction event right now and process it
                 //   e.g. by spawning a new item depending on `evt.InteractionID`
-                if (true)
+                var couldHandleEvent = true;
+                if (couldHandleEvent)
                     yield return api.AckEvent(evt.EventID);
                 else
                     yield return api.RejectEvent(evt.EventID, "the reason why we rejected");
