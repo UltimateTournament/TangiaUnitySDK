@@ -15,16 +15,9 @@ namespace Tangia
 
         public string SessionKey { private get; set; }
 
-        /*
-	        
-	        
-	        
-	        /game/interactions/stop_playing
-         */
-
-        public TangiaAPI(string gameToken, string gameVersion)
+        public TangiaAPI(string gameToken, string gameVersion, string apiAddr = "https://api.tangia.co")
         {
-            this.apiAddr = Environment.GetEnvironmentVariable("TANGIA_ADDR") ?? "https://api.tangia.co";
+            this.apiAddr = apiAddr;
             this.gameToken = gameToken;
             this.gameVersion = gameVersion;
         }
@@ -34,14 +27,14 @@ namespace Tangia
             return httpCall("POST", "/game/login", null, new GameLoginReq { GameID = gameToken, Code = code },
                 webReq => callback(new LoginResult { Success = true, SessionKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
                 err => callback(new LoginResult { Success = false, ErrorMessage = err })
-                );
+                ); 
         }
 
         public IEnumerator PollEvents(Action<GameEventsResp> callback)
         {
             return httpCall("POST", "/game/interactions/poll", SessionKey, new GameEventsReq { GameVersion = gameVersion },
                 webReq => callback(JsonConvert.DeserializeObject<GameEventsResp>(webReq.text)),
-                err => callback(null)
+                err => callback(new GameEventsResp { Error = err })
                 );
         }
 
@@ -154,6 +147,7 @@ namespace Tangia
     }
     public class GameEventsResp
     {
+        public string Error { get; set; }
         [JsonProperty(PropertyName = "Events")]
         public GameEvent[] Events { get; set; }
     }
