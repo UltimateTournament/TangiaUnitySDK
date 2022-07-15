@@ -9,6 +9,11 @@ game in events you receive with this SDK.
 
 _<sup>*</sup>currently in closed beta_
 
+## Example Game
+
+We added Tangia support to one of the Unity example games, so if you prefer looking at examples
+over reading docs, [check it out](https://github.com/UltimateTournament/TangiaUnityExample/blob/main/Assets/Scripts/TangiaSpawner.cs).
+
 ## Installation
 
 - In the Unity Editor go to `Window > Package Manager`
