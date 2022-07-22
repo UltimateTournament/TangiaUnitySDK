@@ -27,7 +27,7 @@ namespace Tangia
             return httpCall("POST", "/game/login", null, new GameLoginReq { GameID = gameToken, Code = code },
                 webReq => callback(new LoginResult { Success = true, SessionKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
                 err => callback(new LoginResult { Success = false, ErrorMessage = err })
-                ); 
+                );
         }
 
         public IEnumerator PollEvents(Action<GameEventsResp> callback)
@@ -40,7 +40,7 @@ namespace Tangia
 
         public IEnumerator AckEvent(string eventID)
         {
-            var result = new AckInteractionEventsReq { EventResults = new[] { new EventResult { EventID = eventID, Executed=true } } };
+            var result = new AckInteractionEventsReq { EventResults = new[] { new EventResult { EventID = eventID, Executed = true } } };
             return httpCall("POST", "/game/interactions/ack", SessionKey, result,
                 webReq => { },
                 err => { }
@@ -49,7 +49,7 @@ namespace Tangia
 
         public IEnumerator RejectEvent(string eventID, string reason)
         {
-            var result = new AckInteractionEventsReq { EventResults = new[] { new EventResult { EventID = eventID, Executed = false, Message= reason } } };
+            var result = new AckInteractionEventsReq { EventResults = new[] { new EventResult { EventID = eventID, Executed = false, Message = reason } } };
             return httpCall("POST", "/game/interactions/ack", SessionKey, result,
                 webReq => { },
                 err => { }
@@ -164,6 +164,30 @@ namespace Tangia
 
         [JsonProperty(PropertyName = "BuyerName")]
         public string BuyerName { get; set; }
+
+        [JsonProperty(PropertyName = "CreatedAt")]
+        public string CreatedAt { get; set; }
+
+        [JsonProperty(PropertyName = "Metadata")]
+        public string Metadata { get; set; }
+
+        [JsonProperty(PropertyName = "GameID")]
+        public string GameID { get; set; }
+
+        [JsonProperty(PropertyName = "Title")]
+        public string Title { get; set; }
+
+        [JsonProperty(PropertyName = "Description")]
+        public string Description { get; set; }
+
+        [JsonProperty(PropertyName = "Rating")]
+        public string Rating { get; set; }
+
+
+        public override string ToString()
+        {
+            return $"[EventID:{EventID}, InteractionID:{InteractionID}, Price:{Price}, BuyerName:{BuyerName}]";
+        }
     }
 
     public class AckInteractionEventsReq
