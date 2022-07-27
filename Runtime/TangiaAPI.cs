@@ -113,6 +113,9 @@ namespace Tangia
                         }
                         break;
                 }
+                dl.Dispose();
+                if (webReq.uploadHandler != null)
+                    webReq.uploadHandler.Dispose();
             }
         }
     }
