@@ -10,38 +10,44 @@ namespace Tangia
     public class TangiaAPI
     {
         private readonly string apiAddr;
-        private readonly string gameToken;
         private readonly string gameVersion;
 
         public string SessionKey { private get; set; }
 
-        public TangiaAPI(string gameToken, string gameVersion, string apiAddr = "https://api.tangia.co")
+        public TangiaAPI(string gameVersion, string apiAddr = "https://api.tangia.co")
         {
             this.apiAddr = apiAddr;
-            this.gameToken = gameToken;
             this.gameVersion = gameVersion;
         }
 
         public IEnumerator Login(string code, Action<LoginResult> callback)
         {
-            return httpCall("POST", "/game/login", null, new GameLoginReq { GameID = gameToken, Code = code },
-                webReq => callback(new LoginResult { Success = true, SessionKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
+            return httpCall("POST", "/v2/actions/login", null, new GameLoginReq { VersionInfo = this.gameVersion, Code = code },
+                webReq => callback(new LoginResult { Success = true, AccountKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
                 err => callback(new LoginResult { Success = false, ErrorMessage = err })
                 );
         }
 
-        public IEnumerator PollEvents(Action<GameEventsResp> callback)
+        public IEnumerator Logout()
         {
-            return httpCall("POST", "/game/interactions/poll", SessionKey, new GameEventsReq { GameVersion = gameVersion },
-                webReq => callback(JsonConvert.DeserializeObject<GameEventsResp>(webReq.text)),
-                err => callback(new GameEventsResp { Error = err })
+            return httpCall("POST", "/v2/actions/logout", SessionKey, null,
+                webReq => { },
+                err => { }
+                );
+        }
+
+        // poll game-sepcific events
+        public IEnumerator PollEvents<T>(Action<GameEventsResp<T>> callback)
+        {
+            return httpCall("GET", "/v2/actions/pending", SessionKey, null,
+                webReq => callback(JsonConvert.DeserializeObject<GameEventsResp<T>>(webReq.text)),
+                err => callback(new GameEventsResp<T> { Error = err })
                 );
         }
 
         public IEnumerator AckEvent(string eventID)
         {
-            var result = new AckInteractionEventsReq { EventResults = new[] { new EventResult { EventID = eventID, Executed = true } } };
-            return httpCall("POST", "/game/interactions/ack", SessionKey, result,
+            return httpCall("POST", "/v2/actions/ack/" + eventID, SessionKey, null,
                 webReq => { },
                 err => { }
                 );
@@ -49,16 +55,7 @@ namespace Tangia
 
         public IEnumerator RejectEvent(string eventID, string reason)
         {
-            var result = new AckInteractionEventsReq { EventResults = new[] { new EventResult { EventID = eventID, Executed = false, Message = reason } } };
-            return httpCall("POST", "/game/interactions/ack", SessionKey, result,
-                webReq => { },
-                err => { }
-                );
-        }
-
-        public IEnumerator StopPlaying()
-        {
-            return httpCall("POST", "/game/interactions/ack", SessionKey, null,
+            return httpCall("POST", "/v2/actions/nack/" + eventID + "?reason=" + reason, SessionKey, null,
                 webReq => { },
                 err => { }
                 );
@@ -122,13 +119,13 @@ namespace Tangia
 
     class GameLoginReq
     {
-
-        [JsonProperty(PropertyName = "GameID")]
-        public string GameID { get; set; }
+        [JsonProperty(PropertyName = "VersionInfo")]
+        public string VersionInfo { get; set; }
 
         [JsonProperty(PropertyName = "Code")]
         public string Code { get; set; }
     }
+
     class GameLoginResp
     {
 
@@ -138,77 +135,25 @@ namespace Tangia
 
     public class LoginResult
     {
-        public bool Success { get; set; }
-        public string SessionKey { get; set; }
-        public string ErrorMessage { get; set; }
+        [JsonProperty(PropertyName = "AccountKey")]
+        public string AccountKey { get; set; }
     }
 
-    public class GameEventsReq
-    {
-        [JsonProperty(PropertyName = "GameVersion")]
-        public string GameVersion { get; set; }
-    }
-    public class GameEventsResp
+    public class GameEventsResp<T>
     {
         public string Error { get; set; }
-        [JsonProperty(PropertyName = "Events")]
-        public GameEvent[] Events { get; set; }
-    }
-    public class GameEvent
-    {
-        [JsonProperty(PropertyName = "EventID")]
-        public string EventID { get; set; }
 
-        [JsonProperty(PropertyName = "InteractionID")]
-        public string InteractionID { get; set; }
+        [JsonProperty(PropertyName = "ID")]
+        public String ID { get; set; }
 
-        [JsonProperty(PropertyName = "Price")]
-        public long Price { get; set; }
+        [JsonProperty(PropertyName = "Trigger")]
+        public String Trigger { get; set; }
 
-        [JsonProperty(PropertyName = "BuyerName")]
-        public string BuyerName { get; set; }
+        [JsonProperty(PropertyName = "Body")]
+        public T Body { get; set; }
 
-        [JsonProperty(PropertyName = "CreatedAt")]
-        public string CreatedAt { get; set; }
-
-        [JsonProperty(PropertyName = "Metadata")]
-        public string Metadata { get; set; }
-
-        [JsonProperty(PropertyName = "GameID")]
-        public string GameID { get; set; }
-
-        [JsonProperty(PropertyName = "Title")]
-        public string Title { get; set; }
-
-        [JsonProperty(PropertyName = "Description")]
-        public string Description { get; set; }
-
-        [JsonProperty(PropertyName = "Rating")]
-        public string Rating { get; set; }
-
-
-        public override string ToString()
-        {
-            return $"[EventID:{EventID}, InteractionID:{InteractionID}, Price:{Price}, BuyerName:{BuyerName}]";
-        }
-    }
-
-    public class AckInteractionEventsReq
-    {
-        [JsonProperty(PropertyName = "EventResults")]
-        public EventResult[] EventResults { get; set; }
-    }
-
-    public class EventResult
-    {
-        [JsonProperty(PropertyName = "EventID")]
-        public string EventID { get; set; }
-
-        [JsonProperty(PropertyName = "Executed")]
-        public bool Executed { get; set; }
-
-        [JsonProperty(PropertyName = "Message")]
-        public string Message { get; set; }
+        [JsonProperty(PropertyName = "Ttl")]
+        public String Ttl { get; set; }
     }
 
 }
