@@ -12,7 +12,7 @@ namespace Tangia
         private readonly string apiAddr;
         private readonly string gameVersion;
 
-        public string SessionKey { private get; set; }
+        public string AccountKey { private get; set; }
 
         public TangiaAPI(string gameVersion, string apiAddr = "https://api.tangia.co")
         {
@@ -23,14 +23,14 @@ namespace Tangia
         public IEnumerator Login(string code, Action<LoginResult> callback)
         {
             return httpCall("POST", "/v2/actions/login", null, new GameLoginReq { VersionInfo = this.gameVersion, Code = code },
-                webReq => callback(new LoginResult { Success = true, SessionKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
+                webReq => callback(new LoginResult { Success = true, AccountKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
                 err => callback(new LoginResult { Success = false, ErrorMessage = err })
                 );
         }
 
         public IEnumerator Logout()
         {
-            return httpCall("POST", "/v2/actions/logout", SessionKey, null,
+            return httpCall("POST", "/v2/actions/logout", AccountKey, null,
                 webReq => { },
                 err => { }
                 );
@@ -39,7 +39,7 @@ namespace Tangia
         // poll game-sepcific events
         public IEnumerator PollEvents<T>(Action<GameEventsResp<T>> callback)
         {
-            return httpCall("GET", "/v2/actions/pending", SessionKey, null,
+            return httpCall("GET", "/v2/actions/pending", AccountKey, null,
                 webReq => callback(JsonConvert.DeserializeObject<GameEventsResp<T>>(webReq.text)),
                 err => callback(new GameEventsResp<T> { Error = err })
                 );
@@ -47,7 +47,7 @@ namespace Tangia
 
         public IEnumerator AckEvent(string eventID)
         {
-            return httpCall("POST", "/v2/actions/ack/" + eventID, SessionKey, null,
+            return httpCall("POST", "/v2/actions/ack/" + eventID, AccountKey, null,
                 webReq => { },
                 err => { }
                 );
@@ -55,7 +55,7 @@ namespace Tangia
 
         public IEnumerator RejectEvent(string eventID, string reason)
         {
-            return httpCall("POST", "/v2/actions/nack/" + eventID + "?reason=" + reason, SessionKey, null,
+            return httpCall("POST", "/v2/actions/nack/" + eventID + "?reason=" + reason, AccountKey, null,
                 webReq => { },
                 err => { }
                 );
