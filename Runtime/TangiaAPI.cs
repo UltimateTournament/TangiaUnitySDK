@@ -23,7 +23,7 @@ namespace Tangia
         public IEnumerator Login(string code, Action<LoginResult> callback)
         {
             return httpCall("POST", "/v2/actions/login", null, new GameLoginReq { VersionInfo = this.gameVersion, Code = code },
-                webReq => callback(new LoginResult { Success = true, AccountKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
+                webReq => callback(new LoginResult { Success = true, SessionKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
                 err => callback(new LoginResult { Success = false, ErrorMessage = err })
                 );
         }
