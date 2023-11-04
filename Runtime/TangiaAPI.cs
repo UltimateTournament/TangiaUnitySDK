@@ -23,7 +23,7 @@ namespace Tangia
         public IEnumerator Login(string code, Action<LoginResult> callback)
         {
             return httpCall("POST", "/v2/actions/login", null, new GameLoginReq { VersionInfo = this.gameVersion, Code = code },
-                webReq => callback(new LoginResult { Success = true, AccountKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).SessionID }),
+                webReq => callback(new LoginResult { Success = true, AccountKey = JsonConvert.DeserializeObject<GameLoginResp>(webReq.text).AccountKey }),
                 err => callback(new LoginResult { Success = false, ErrorMessage = err })
                 );
         }
@@ -139,10 +139,8 @@ namespace Tangia
         public string AccountKey { get; set; }
     }
 
-    public class GameEventsResp<T>
+    public class ActionExecution
     {
-        public string Error { get; set; }
-
         [JsonProperty(PropertyName = "ID")]
         public String ID { get; set; }
 
@@ -156,4 +154,11 @@ namespace Tangia
         public String Ttl { get; set; }
     }
 
+    public class GameEventsResp<T>
+    {
+        public string Error { get; set; }
+
+        [JsonProperty(PropertyName = "ActionExecutions")]
+        public ActionExecution[] ActionExecutions { get; set; }
+    }
 }
